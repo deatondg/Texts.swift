@@ -7,14 +7,14 @@ enum Texts {
 #"""
 // Generated using Texts.swift {{ version }} by Davis Deaton
 // DO NOT EDIT
-enum {{ enumName }} {}
+enum {{ rootIdentifier }} {}
 
 {% for directory in directories %}
 extension {{ directory.parent }} { enum {{ directory.lastComponent }} {} }
 {% endfor %}
 
 {% for file in files %}
-extension {{ enumName }}.{{ file.parent }} {
+extension {{ file.parent }} {
     static var {{ file.name }}: String = {{ file.escapes }}"""
 {{ file.contents }}
 """{{ file.escapes }}

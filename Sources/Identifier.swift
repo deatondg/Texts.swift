@@ -7,9 +7,10 @@
 
 import Foundation
 
+// An identifier represents a string that can be used as an identifier in Swift source code.
 // The grammar of Swift identifiers:
 // https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/LexicalStructure.html#//apple_ref/doc/uid/TP40014097-CH30-ID410
-class Identifier: CustomStringConvertible {
+class Identifier {
     static let head_ranges: [(Unicode.Scalar, Unicode.Scalar)] = [
         ("A", "Z"), ("a", "z"),
         ("\u{00B2}", "\u{00B5}"), ("\u{00B7}", "\u{00BA}"),
@@ -63,6 +64,17 @@ class Identifier: CustomStringConvertible {
         }
         self.string = string
     }
-    
+}
+
+extension Identifier: CustomStringConvertible {
     var description: String { string }
+}
+
+extension Identifier: Hashable {
+    static func == (lhs: Identifier, rhs: Identifier) -> Bool {
+        return lhs.string == rhs.string
+    }
+    func hash(into hasher: inout Hasher) {
+        string.hash(into: &hasher)
+    }
 }

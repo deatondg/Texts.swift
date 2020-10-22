@@ -8,6 +8,9 @@
 import Foundation
 import PathKit
 
+// A file wraps a path to a file.
+// It contains a path, a corresponding IdentifierPath for usage in Swift source,
+//  the contents of the file, and how many #'s the contents need to be escaped as a raw string.
 class File {
     let path: Path
     let identifierPath: IdentifierPath
@@ -19,12 +22,16 @@ class File {
     
     let escapes: String
     
-    init(path: Path) throws {
+    init(path: Path, useUnderscores: Bool = true, identifierPathPrefix: IdentifierPath = IdentifierPath()) throws {
         self.path = path
-        self.identifierPath = IdentifierPath(from: path)
+        self.identifierPath = identifierPathPrefix + IdentifierPath(from: path)
         
-        self.parent = self.identifierPath.parent!
-        self.name = self.identifierPath.lastComponent!
+        guard let parent = self.identifierPath.parent,
+              let name = self.identifierPath.lastComponent else {
+            throw RuntimeError("File.init: Path \(path) has identifier path \(identifierPath) which is too short to refer to a file.")
+        }
+        self.parent = parent
+        self.name = name
         
         self.contents = try path.read()
         

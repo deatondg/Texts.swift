@@ -9,8 +9,6 @@ import ArgumentParser
 import PathKit
 import Stencil
 
-let template = Template(templateString: Texts.Templates.Texts_swifttemplate)
-
 extension Path: ExpressibleByArgument {
     public init(argument: String) {
         self.init(argument)

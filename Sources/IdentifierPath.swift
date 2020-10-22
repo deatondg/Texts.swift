@@ -7,7 +7,9 @@
 
 import PathKit
 
-final class IdentifierPath: CustomStringConvertible, ExpressibleByArrayLiteral {
+// An IdentifierPath represents a path of Swift identifiers, separated by dots.
+// This lets us treat file system paths as enums inside enums.
+final class IdentifierPath {
     let components: [Identifier]
     
     let parent: IdentifierPath?
@@ -24,9 +26,7 @@ final class IdentifierPath: CustomStringConvertible, ExpressibleByArrayLiteral {
         
         self.lastComponent = components.last
     }
-    convenience init(arrayLiteral elements: Identifier...) {
-        self.init(elements)
-    }
+    
     convenience init(from path: Path, useUnderscores: Bool = true) {
         self.init(path.components.map({ Identifier(from: $0, useUnderscores: useUnderscores) }))
     }
@@ -34,8 +34,25 @@ final class IdentifierPath: CustomStringConvertible, ExpressibleByArrayLiteral {
     static func + (lhs: IdentifierPath, rhs: IdentifierPath) -> IdentifierPath {
         return IdentifierPath(lhs.components + rhs.components)
     }
-    
+}
+
+extension IdentifierPath: Hashable {
+    static func == (lhs: IdentifierPath, rhs: IdentifierPath) -> Bool {
+        return lhs.components == rhs.components
+    }
+    func hash(into hasher: inout Hasher) {
+        components.hash(into: &hasher)
+    }
+}
+
+extension IdentifierPath: CustomStringConvertible {
     var description: String {
         components.map(\.description).joined(separator: ".")
+    }
+}
+
+extension IdentifierPath: ExpressibleByArrayLiteral {
+    convenience init(arrayLiteral elements: Identifier...) {
+        self.init(elements)
     }
 }

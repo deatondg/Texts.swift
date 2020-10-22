@@ -16,6 +16,7 @@
 		93841E20253E4C6800729BED /* IdentifierPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93841E1F253E4C6800729BED /* IdentifierPath.swift */; };
 		93841E2C253E546000729BED /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93841E2B253E546000729BED /* File.swift */; };
 		93841E35253E5ED500729BED /* Texts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93841DE7253CD7E500729BED /* Texts.swift */; };
+		93F859DB253F820A00DFE1D4 /* XcodeProj in Frameworks */ = {isa = PBXBuildFile; productRef = 93F859DA253F820A00DFE1D4 /* XcodeProj */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -40,6 +41,7 @@
 		93841E1F253E4C6800729BED /* IdentifierPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentifierPath.swift; sourceTree = "<group>"; };
 		93841E2B253E546000729BED /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
 		93841E31253E5BBF00729BED /* Texts.swifttemplate */ = {isa = PBXFileReference; lastKnownFileType = text; path = Texts.swifttemplate; sourceTree = "<group>"; };
+		93F859DE253F9B7400DFE1D4 /* Texts.generated.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Texts.generated.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,6 +52,7 @@
 				93841DE3253CD79200729BED /* Stencil in Frameworks */,
 				93841DDE253CD0FD00729BED /* PathKit in Frameworks */,
 				93841DDA253CD0B100729BED /* ArgumentParser in Frameworks */,
+				93F859DB253F820A00DFE1D4 /* XcodeProj in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -90,6 +93,7 @@
 			isa = PBXGroup;
 			children = (
 				93841DE7253CD7E500729BED /* Texts.swift */,
+				93F859DE253F9B7400DFE1D4 /* Texts.generated.swift */,
 			);
 			path = Generated;
 			sourceTree = "<group>";
@@ -123,6 +127,7 @@
 				93841DD9253CD0B100729BED /* ArgumentParser */,
 				93841DDD253CD0FD00729BED /* PathKit */,
 				93841DE2253CD79200729BED /* Stencil */,
+				93F859DA253F820A00DFE1D4 /* XcodeProj */,
 			);
 			productName = Texts.swift;
 			productReference = 93841DCD253CD0A300729BED /* texts-swift */;
@@ -155,6 +160,7 @@
 				93841DD8253CD0B100729BED /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 				93841DDC253CD0FD00729BED /* XCRemoteSwiftPackageReference "PathKit" */,
 				93841DE1253CD79200729BED /* XCRemoteSwiftPackageReference "Stencil" */,
+				93F859D9253F820A00DFE1D4 /* XCRemoteSwiftPackageReference "XcodeProj" */,
 			);
 			productRefGroup = 93841DCE253CD0A300729BED /* Products */;
 			projectDirPath = "";
@@ -367,6 +373,14 @@
 				minimumVersion = 0.14.0;
 			};
 		};
+		93F859D9253F820A00DFE1D4 /* XCRemoteSwiftPackageReference "XcodeProj" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/deatondg/XcodeProj";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -384,6 +398,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 93841DE1253CD79200729BED /* XCRemoteSwiftPackageReference "Stencil" */;
 			productName = Stencil;
+		};
+		93F859DA253F820A00DFE1D4 /* XcodeProj */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 93F859D9253F820A00DFE1D4 /* XCRemoteSwiftPackageReference "XcodeProj" */;
+			productName = XcodeProj;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
