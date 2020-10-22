@@ -1,0 +1,7 @@
+// Generated using Texts.swift {{ version }} by Davis Deaton
+// DO NOT EDIT
+enum {{ rootIdentifier }} {}
+
+{% for directory in directories %}
+extension {{ directory.parent }} { enum {{ directory.lastComponent }} {} }
+{% endfor %}

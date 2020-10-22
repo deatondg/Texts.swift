@@ -1,0 +1,8 @@
+// Generated using Texts.swift {{ version }} by Davis Deaton
+// DO NOT EDIT
+
+extension {{ file.parent }} {
+    static var {{ file.name }}: String = {{ file.escapes }}"""
+{{ file.contents }}
+"""{{ file.escapes }}
+}

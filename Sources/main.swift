@@ -181,28 +181,47 @@ struct Texts_swift: ParsableCommand {
             var directories: Set<IdentifierPath> = []
             for file in files {
                 var identifierPath = IdentifierPath()
-                for component in file.identifierPath.components {
+                for component in file.parent.components {
                     identifierPath = identifierPath + [component]
                     directories.update(with: identifierPath)
                 }
             }
             directories.remove([rootIdentifier])
             
-            if multipleFiles {
-                fatalError("Multiple files not yet implemented.")
-            }
-            
-            let outputString = try Template(templateString: Texts.Templates.Texts_swifttemplate).render([
-                "version": Texts_swift.version,
-                "files": files.sorted(by: { $0.identifierPath.description < $1.identifierPath.description }),
-                "directories": directories.sorted(by: { $0.description < $1.description }),
-                "rootIdentifier": rootIdentifier
-            ])
-            
-            try (outputDirectory + outputName).write(outputString)
-            
-            if xcodeProj != nil {
-                fatalError("Writing to Xcode projects not yet implemented.")
+            if !multipleFiles {
+                let outputString = try Template(templateString: Texts.Templates.Texts_swifttemplate).render([
+                    "version": Texts_swift.version,
+                    "files": files.sorted(by: { $0.identifierPath.description < $1.identifierPath.description }),
+                    "directories": directories.sorted(by: { $0.description < $1.description }),
+                    "rootIdentifier": rootIdentifier
+                ])
+                
+                try (outputDirectory + outputName).write(outputString)
+                
+                if xcodeProj != nil {
+                    fatalError("Writing to Xcode projects not yet implemented.")
+                }
+            } else {
+                let directoryString = try Template(templateString: Texts.Templates.Texts_Directory_swifttemplate).render([
+                    "version": Texts_swift.version,
+                    "directories": directories.sorted(by: { $0.description < $1.description }),
+                    "rootIdentifier": rootIdentifier
+                ])
+                
+                try (outputDirectory + outputName).write(directoryString)
+                
+                for file in files {
+                    let fileString = try Template(templateString: Texts.Templates.Texts_File_swifttemplate).render([
+                        "version": Texts_swift.version,
+                        "file": file
+                    ])
+                    
+                    try (outputDirectory + "\(file.identifierPath).generated.swift").write(fileString)
+                }
+                
+                if xcodeProj != nil {
+                    fatalError("Writing to Xcode projects not yet implemented.")
+                }
             }
         }
     }
@@ -212,5 +231,5 @@ struct Texts_swift: ParsableCommand {
 //print(Texts_swift.helpMessage())
 //Texts_swift.main(#"-r -o /Users/davisdeaton/Developer/Projects/Texts.swift/Generated/"#.split(separator: " ").map(String.init))
 //Texts_swift.main(#"-r --root /Users/davisdeaton/Developer/Projects/Texts.swift --xcode-project /Users/davisdeaton/Developer/Projects/Texts.swift/Texts.swift.xcodeproj Templates -o /Users/davisdeaton/Developer/Projects/Texts.swift/Generated"#.split(separator: " ").map(String.init))
-Texts_swift.main(#"-r --root /Users/davisdeaton/Developer/Projects/Texts.swift Templates -o /Users/davisdeaton/Developer/Projects/Texts.swift/Generated"#.split(separator: " ").map(String.init))
+Texts_swift.main(#"-r --root /Users/davisdeaton/Developer/Projects/Texts.swift Templates --multiple-files -o /Users/davisdeaton/Developer/Projects/Texts.swift/Generated"#.split(separator: " ").map(String.init))
 //Texts_swift.main("--root /Users/davisdeaton/Developer/Projects/Texts.swift/ Templates -o /Users/davisdeaton/Developer/Projects/Texts.swift/Generated".split(separator: " ").map(String.init))
