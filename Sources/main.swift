@@ -49,17 +49,17 @@ struct Texts_swift: ParsableCommand {
     var rootPath: Path?
     
     @Option(name: .customLong("xcode-project"), help: """
-    The path to an Xcode project to link the generated files to. \
+    The path to an Xcode project to add the generated files to. \
     This project is _not_ scanned for resource files.
     """)
     var xcodeProject: Path?
     
     @Option(name: .customLong("target"), help: """
-    The name of the Xcode target to link the generated files to. \
-    Must be specified if an Xcode project is specified. \
-    It is an error to supply this argument without an Xcode project.
+    The name of an Xcode target to link the generated files to. \
+    If it is not specified, the added source files will not be linked to any target. \
+    Multiple targets can be specified.
     """)
-    var targetName: String?
+    var targetNames: [String] = []
     
     @Option(name: [.short, .customLong("output")], help: """
     A file or directory to which the generated Swift sources will be written. \
@@ -92,13 +92,8 @@ struct Texts_swift: ParsableCommand {
         // We could put this in the validate method(), but we'd have to do some of the same work again anyway.
         
         // Verify that the specified Xcode project exists and create the relevant data.
-        let xcode: (path: Path, project: XcodeProj, target: PBXTarget)?
+        let xcode: (path: Path, project: XcodeProj, targets: [(target: PBXTarget, sourcesBuildPhase: PBXSourcesBuildPhase)], mainGroup: PBXGroup)?
         if let xcodeProject = xcodeProject {
-            // Make sure a target is specified along with the project
-            guard let targetName = targetName else {
-                throw ValidationError("<xcode-project> specified without a target.")
-            }
-            
             let project: XcodeProj
             do {
                 project = try XcodeProj(path: xcodeProject)
@@ -106,19 +101,36 @@ struct Texts_swift: ParsableCommand {
                 throw ValidationError("Could not open the Xcode project: \(error).")
             }
             
-            // Confirm that this project has exactly one target with the specified name.
-            let targets = project.pbxproj.targets(named: targetName)
-            guard targets.count <= 1 else {
-                throw ValidationError("Target name \(targetName) is ambiguous. Do you have multiple targets with this name?")
-            }
-            guard let target = targets.first else {
-                throw ValidationError("Could not find target named \(targetName) in the specified Xcode project.")
+            let sourcesBuildPhases = try targetNames.map({ targetName -> (target: PBXTarget, sourcesBuildPhase: PBXSourcesBuildPhase) in
+                // Confirm that this project has exactly one target with the specified name.
+                let targets = project.pbxproj.targets(named: targetName)
+                guard targets.count <= 1 else {
+                    throw ValidationError("Target name \(targetName) is ambiguous. Do you have multiple targets with this name?")
+                }
+                guard let target = targets.first else {
+                    throw ValidationError("Could not find target named \(targetName) in the specified Xcode project.")
+                }
+                
+                guard let sourcesBuildPhase = try target.sourcesBuildPhase() else {
+                    throw ValidationError("Could not find sources build phase for target: \(targetName)")
+                }
+                
+                if target.product == nil {
+                    print("Warning: Target \(targetName) has no product.")
+                }
+                
+                return (target, sourcesBuildPhase)
+            })
+            
+            // Create the main group
+            guard let mainGroup = try project.pbxproj.rootProject()?.mainGroup else {
+                throw RuntimeError("Could not create main group for Xcode project: \(xcodeProject).")
             }
             
-            xcode = (xcodeProject, project, target)
+            xcode = (xcodeProject, project, sourcesBuildPhases, mainGroup)
         } else {
             // Make sure that a target is not specified without an Xcode project
-            guard targetName == nil else {
+            guard targetNames.isEmpty else {
                 throw ValidationError("<target> specified without an Xcode project.")
             }
             xcode = nil
@@ -264,13 +276,10 @@ struct Texts_swift: ParsableCommand {
         Path.current = originalWorkingDirectory
         
         // If an Xcode project was specified, link our generated files to it.
-        if let (path, project, target) = xcode {
+        if let (path, project, targets, mainGroup) = xcode {
             var shouldWrite = false
             
-            guard let mainGroup = try project.pbxproj.rootProject()?.mainGroup else {
-                throw RuntimeError("Could not create main group for Xcode project: \(path).")
-            }
-            
+            // Find the group to add our source files to.
             var group = mainGroup
             for pathComponent in outputDirectory.components {
                 let groups = group.children.filter({ $0.sourceTree == .group && $0.path == pathComponent })
@@ -291,38 +300,39 @@ struct Texts_swift: ParsableCommand {
                     group = _group
                 }
             }
+            let outputGroup = group
             
-            print(try group.fullPath(sourceRoot: root))
+            // Add files to the project and link them to the target if they do not exist.
+            for file in sourceFiles {
+                let outputFiles = outputGroup.children.filter(({ $0.path == file.name }))
+                if outputFiles.count > 1 {
+                    print("Warning: Xcode somehow has two files name \(file.name) in the output group. Ignoring...")
+                }
+                if outputFiles.isEmpty {
+                    shouldWrite = true
+                    // Add the file to the group
+                    let fileReference = try group.addFile(at: root + outputDirectory + file.name, sourceRoot: root)
+                    // Create a corresponding build file and add it to the project
+                    let buildFile = PBXBuildFile(file: fileReference, product: nil, settings: nil)
+                    project.pbxproj.add(object: buildFile)
+                    // Add the build file to each target
+                    for (_, sourcesBuildPhase) in targets {
+                        // If the build phase has no file list, create one
+                        if sourcesBuildPhase.files == nil {
+                            sourcesBuildPhase.files = []
+                        }
+                        // Add the file to the build phase
+                        sourcesBuildPhase.files!.append(buildFile)
+                    }
+                }
+            }
             
             if shouldWrite {
-                //try project.write(path: path)
+                try project.writePBXProj(path: path, outputSettings: PBXOutputSettings())
             }
-            //try project.write(path: path)
-            
-            //print(try project.pbxproj.groups.map({ try ($0.name, $0.fullPath(sourceRoot: ".")) }))
-            //print(try project.pbxproj.fileReferences.map({ try $0.path }))
-            
-            /*
-            for file in sourceFiles {
-                let outputFiles = group.children.filter({ $0.path == outputPath })
-                if outputFiles.count == 0 {
-                    
-                }
-                print(group.children.map({ $0.path }))
-                if let xcodeFile = group.file(named: outputName) {
-                    print("Here")
-                } else {
-                    fatalError("Writing to Xcode projects not yet implemented.")
-                }
-            }
-            */
         }
     }
 }
 
 //print(Texts_swift.helpMessage())
-Texts_swift.main(#"-r --xcode-project /Users/davisdeaton/Developer/Projects/Texts.swift/Texts.swift.xcodeproj --target Texts.swift -o Generated/Testing/Output/ --multiple-files Templates"#.split(separator: " ").map(String.init))
-//Texts_swift.main(#"-r -o /Users/davisdeaton/Developer/Projects/Texts.swift/Generated/"#.split(separator: " ").map(String.init))
-//Texts_swift.main(#"-r --root /Users/davisdeaton/Developer/Projects/Texts.swift --xcode-project /Users/davisdeaton/Developer/Projects/Texts.swift/Texts.swift.xcodeproj Templates -o /Users/davisdeaton/Developer/Projects/Texts.swift/Generated"#.split(separator: " ").map(String.init))
-//Texts_swift.main(#"-r --root /Users/davisdeaton/Developer/Projects/Texts.swift Templates --multiple-files -o /Users/davisdeaton/Developer/Projects/Texts.swift/Generated"#.split(separator: " ").map(String.init))
-//Texts_swift.main("--root /Users/davisdeaton/Developer/Projects/Texts.swift/ Templates -o /Users/davisdeaton/Developer/Projects/Texts.swift/Generated".split(separator: " ").map(String.init))
+Texts_swift.main(#"-r --xcode-project /Users/davisdeaton/Developer/Projects/Texts.swift/Texts.swift.xcodeproj --target Texts.swift -o Generated/ Templates"#.split(separator: " ").map(String.init))
