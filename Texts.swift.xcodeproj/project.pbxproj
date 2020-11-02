@@ -16,7 +16,7 @@
 		93841E20253E4C6800729BED /* IdentifierPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93841E1F253E4C6800729BED /* IdentifierPath.swift */; };
 		93841E2C253E546000729BED /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93841E2B253E546000729BED /* File.swift */; };
 		93968B022550AD6600F3CEE8 /* Texts.generated.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6F02B0F56A6CBC0E6E40F7 /* Texts.generated.swift */; };
-		93F859DB253F820A00DFE1D4 /* XcodeProj in Frameworks */ = {isa = PBXBuildFile; productRef = 93F859DA253F820A00DFE1D4 /* XcodeProj */; };
+		93968B072550B06200F3CEE8 /* XcodeProj in Frameworks */ = {isa = PBXBuildFile; productRef = 93968B062550B06200F3CEE8 /* XcodeProj */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -52,7 +52,7 @@
 				93841DE3253CD79200729BED /* Stencil in Frameworks */,
 				93841DDE253CD0FD00729BED /* PathKit in Frameworks */,
 				93841DDA253CD0B100729BED /* ArgumentParser in Frameworks */,
-				93F859DB253F820A00DFE1D4 /* XcodeProj in Frameworks */,
+				93968B072550B06200F3CEE8 /* XcodeProj in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -127,7 +127,7 @@
 				93841DD9253CD0B100729BED /* ArgumentParser */,
 				93841DDD253CD0FD00729BED /* PathKit */,
 				93841DE2253CD79200729BED /* Stencil */,
-				93F859DA253F820A00DFE1D4 /* XcodeProj */,
+				93968B062550B06200F3CEE8 /* XcodeProj */,
 			);
 			productName = Texts.swift;
 			productReference = 93841DCD253CD0A300729BED /* texts-swift */;
@@ -160,7 +160,7 @@
 				93841DD8253CD0B100729BED /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 				93841DDC253CD0FD00729BED /* XCRemoteSwiftPackageReference "PathKit" */,
 				93841DE1253CD79200729BED /* XCRemoteSwiftPackageReference "Stencil" */,
-				93F859D9253F820A00DFE1D4 /* XCRemoteSwiftPackageReference "XcodeProj" */,
+				93968B052550B06200F3CEE8 /* XCRemoteSwiftPackageReference "XcodeProj" */,
 			);
 			productRefGroup = 93841DCE253CD0A300729BED /* Products */;
 			projectDirPath = "";
@@ -375,12 +375,12 @@
 				minimumVersion = 0.14.0;
 			};
 		};
-		93F859D9253F820A00DFE1D4 /* XCRemoteSwiftPackageReference "XcodeProj" */ = {
+		93968B052550B06200F3CEE8 /* XCRemoteSwiftPackageReference "XcodeProj" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/deatondg/XcodeProj";
+			repositoryURL = "https://github.com/tuist/XcodeProj";
 			requirement = {
-				branch = master;
-				kind = branch;
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.17.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -401,9 +401,9 @@
 			package = 93841DE1253CD79200729BED /* XCRemoteSwiftPackageReference "Stencil" */;
 			productName = Stencil;
 		};
-		93F859DA253F820A00DFE1D4 /* XcodeProj */ = {
+		93968B062550B06200F3CEE8 /* XcodeProj */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 93F859D9253F820A00DFE1D4 /* XCRemoteSwiftPackageReference "XcodeProj" */;
+			package = 93968B052550B06200F3CEE8 /* XCRemoteSwiftPackageReference "XcodeProj" */;
 			productName = XcodeProj;
 		};
 /* End XCSwiftPackageProductDependency section */

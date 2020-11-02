@@ -335,5 +335,4 @@ struct Texts_swift: ParsableCommand {
     }
 }
 
-//print(Texts_swift.helpMessage())
-Texts_swift.main(#"-r --xcode-project /Users/davisdeaton/Developer/Projects/Texts.swift/Texts.swift.xcodeproj --target Texts.swift -o Generated/ Templates"#.split(separator: " ").map(String.init))
+Texts_swift.main()
