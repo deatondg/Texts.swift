@@ -327,6 +327,7 @@ struct Texts_swift: ParsableCommand {
                 }
             }
             
+            // If we made a change to the Xcode project, write it.
             if shouldWrite {
                 try project.writePBXProj(path: path, outputSettings: PBXOutputSettings())
             }
