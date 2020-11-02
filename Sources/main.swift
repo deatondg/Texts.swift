@@ -61,14 +61,6 @@ struct Texts_swift: ParsableCommand {
     """)
     var targetName: String?
     
-    @Option(name: .customLong("group"), help: """
-    The name of the Xcode group to link the generated files to. \
-    It is an error to supply this argument without an Xcode Project. \
-    This string is checked against both the name and paths of the Xcode groups. \
-    If unspecified, the root group is used.
-    """)
-    var groupName: String?
-    
     @Option(name: [.short, .customLong("output")], help: """
     A file or directory to which the generated Swift sources will be written. \
     In single-file mode, if this is a file, all generated content will be written to this file. \
@@ -96,7 +88,7 @@ struct Texts_swift: ParsableCommand {
         // We could put this in the validate method(), but we'd have to do some of the same work again anyway.
         
         // Verify that the specified Xcode project exists and create the relevant data.
-        let xcode: (path: Path, project: XcodeProj, target: PBXTarget, group: PBXGroup)?
+        let xcode: (path: Path, project: XcodeProj, target: PBXTarget)?
         if let xcodeProject = xcodeProject {
             // Make sure a target is specified along with the project
             guard let targetName = targetName else {
@@ -119,32 +111,11 @@ struct Texts_swift: ParsableCommand {
                 throw ValidationError("Could not find target named \(targetName) in the specified Xcode project.")
             }
             
-            // If the group is specified, make sure it exists uniquely.
-            let group: PBXGroup
-            if let groupName = groupName {
-                let groups = project.pbxproj.groups.filter({ ($0.name == groupName) || ($0.path == groupName) })
-                guard groups.count <= 1 else {
-                    throw ValidationError("Group name \(groupName) is ambiguous. Do you have multiple groups with this name?")
-                }
-                guard let _group = groups.first else {
-                    throw ValidationError("Could not find group named \(groupName) in the specified Xcode Project.")
-                }
-                group = _group
-            } else {
-                guard let _group = try project.pbxproj.rootGroup() else {
-                    throw ValidationError("Xcode project has no root group. I'm not sure if this is even possible.")
-                }
-                group = _group
-            }
-            
-            xcode = (xcodeProject, project, target, group)
+            xcode = (xcodeProject, project, target)
         } else {
-            // Make sure that a target and group are not specified without an Xcode project
+            // Make sure that a target is not specified without an Xcode project
             guard targetName == nil else {
                 throw ValidationError("<target> specified without an Xcode project.")
-            }
-            guard groupName == nil else {
-                throw ValidationError("<group> specified without an Xcode project.")
             }
             xcode = nil
         }
@@ -186,6 +157,9 @@ struct Texts_swift: ParsableCommand {
                 outputDirectory = root
                 outputName = "\(rootIdentifier).generated.swift"
             }
+            // Try to create this directory in case it does not exist.
+            try outputDirectory.mkpath()
+            // Confirm we have succeeded. I'm not sure if this is necessary.
             guard outputDirectory.isDirectory else {
                 throw ValidationError("Specified output directory is not a directory: \(outputDirectory)")
             }
@@ -280,9 +254,9 @@ struct Texts_swift: ParsableCommand {
         } // end root.chdir
         
         // If an Xcode project was specified, link our generated files to it.
-        if let (path, project, target, group) = xcode {
-            try project.pbxproj.rootProject()!.mainGroup.addGroup(named: "Test", options: GroupAddingOptions.withoutFolder)
-            //project.write(path: <#T##Path#>)
+        if let (path, project, target) = xcode {
+            try project.pbxproj.rootProject()!.mainGroup.addGroup(named: "Test")
+            //try project.write(path: path)
             print(try project.pbxproj.rootProject()!.mainGroup!.path)
             
             //print(try project.pbxproj.groups.map({ try ($0.name, $0.fullPath(sourceRoot: ".")) }))
@@ -308,7 +282,7 @@ struct Texts_swift: ParsableCommand {
 
 
 //print(Texts_swift.helpMessage())
-Texts_swift.main(#"-r --xcode-project /Users/davisdeaton/Developer/Projects/Texts.swift/Texts.swift.xcodeproj --target Texts.swift --group Generated -o Generated Templates"#.split(separator: " ").map(String.init))
+Texts_swift.main(#"-r --xcode-project /Users/davisdeaton/Developer/Projects/Texts.swift/Texts.swift.xcodeproj --target Texts.swift -o Generated Templates"#.split(separator: " ").map(String.init))
 //Texts_swift.main(#"-r -o /Users/davisdeaton/Developer/Projects/Texts.swift/Generated/"#.split(separator: " ").map(String.init))
 //Texts_swift.main(#"-r --root /Users/davisdeaton/Developer/Projects/Texts.swift --xcode-project /Users/davisdeaton/Developer/Projects/Texts.swift/Texts.swift.xcodeproj Templates -o /Users/davisdeaton/Developer/Projects/Texts.swift/Generated"#.split(separator: " ").map(String.init))
 //Texts_swift.main(#"-r --root /Users/davisdeaton/Developer/Projects/Texts.swift Templates --multiple-files -o /Users/davisdeaton/Developer/Projects/Texts.swift/Generated"#.split(separator: " ").map(String.init))
