@@ -22,7 +22,7 @@ class SourceFile {
 
 extension Path: ExpressibleByArgument {
     public init(argument: String) {
-        self.init(argument)
+        self = Path(argument).normalize()
     }
 }
 
