@@ -255,9 +255,10 @@ struct Texts_swift: ParsableCommand {
         
         // If an Xcode project was specified, link our generated files to it.
         if let (path, project, target) = xcode {
-            try project.pbxproj.rootProject()!.mainGroup.addGroup(named: "Test")
-            //try project.write(path: path)
-            print(try project.pbxproj.rootProject()!.mainGroup!.path)
+            
+            let group = PBXGroup(children: [], sourceTree: .sourceRoot, name: nil, path: "Test")
+            try project.pbxproj.rootProject()!.mainGroup!.children.append(group)
+            try project.write(path: path)
             
             //print(try project.pbxproj.groups.map({ try ($0.name, $0.fullPath(sourceRoot: ".")) }))
             //print(try project.pbxproj.fileReferences.map({ try $0.path }))
@@ -279,7 +280,6 @@ struct Texts_swift: ParsableCommand {
         }
     }
 }
-
 
 //print(Texts_swift.helpMessage())
 Texts_swift.main(#"-r --xcode-project /Users/davisdeaton/Developer/Projects/Texts.swift/Texts.swift.xcodeproj --target Texts.swift -o Generated Templates"#.split(separator: " ").map(String.init))
