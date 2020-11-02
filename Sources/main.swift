@@ -28,30 +28,44 @@ struct Texts_swift: ParsableCommand {
     """)
     var underscoreReplacement: Bool = true
     
-    @Flag(help: """
-    Creates a .generated.swift file for each resource file. \
-    In this mode, an additional .generated.swift will still be created to house the directory structure.
-    """)
+    @Flag(help: ArgumentHelp("""
+        Create a .generated.swift file for each resource file.
+        """,
+        discussion: """
+        In this mode, <enum-name>.generated.swift will still be created to house the directory structure.
+        """)
+    )
     var multipleFiles: Bool = false
     
-    @Option(help: """
-    The name of the Swift enum which will contain the results of the conversion. \
-    This will be converted into a valid Swift identifier automatically.
-    """)
+    @Option(help: ArgumentHelp("""
+        The name of the Swift enum which will contain the results of the conversion.
+        """,
+        discussion: """
+        This will be converted into a valid Swift identifier automatically according to the specified underscore replacement rule.
+        """)
+    )
     var enumName: String = "Texts"
     
-    @Option(name: .customLong("source-root"), help: """
-    A directory which _all_ path arguments will be treated relative to. \
-    This can only be specified without an Xcode project. \
-    If a project is specified, the directory of the Xcode project will be used. \
-    (default: The directory of the Xcode project if specified, and the current working directory otherwise)
-    """)
+    @Option(name: .customLong("source-root"), help: ArgumentHelp("""
+        A directory which _all_ path arguments will be treated relative to. \
+        (default: The directory of the Xcode project if specified, and the current working directory otherwise)
+        """,
+        discussion: """
+        This can only be specified without an Xcode project. \
+        If a project is specified, the directory of the Xcode project will be used.
+        """,
+        valueName: "root")
+    )
     var rootPath: Path?
     
-    @Option(name: .customLong("xcode-project"), help: """
-    The path to an Xcode project to add the generated files to. \
-    This project is _not_ scanned for resource files.
-    """)
+    @Option(name: .customLong("xcode-project"), help: ArgumentHelp("""
+        The path to an Xcode project to add the generated files to.
+        """,
+        discussion: """
+        This project is _not_ scanned for resource files.
+        """,
+        valueName: "proj")
+    )
     var xcodeProject: Path?
     
     @Option(name: .customLong("target"), help: """
@@ -61,15 +75,18 @@ struct Texts_swift: ParsableCommand {
     """)
     var targetNames: [String] = []
     
-    @Option(name: [.short, .customLong("output")], help: """
-    A file or directory to which the generated Swift sources will be written. \
-    This is treated as a directory if it ends in a / or if this path exists and is a directory. \
-    In single-file mode, if this is a file, all generated content will be written to this file. \
-    If this is a directory, all generated content will be written to <output>/<enum-name>.generated.swift. \
-    In multiple-file mode, if this is a file, the Swift source corresponding to the directory information will be written to this file, and the files for each resource will be written to the directory of this file. \
-    If this is a directory, all files will be written to this directory, and the directory structure will be written to <output>/<enum-name>.generated.swift \
-    (default: <root>)
-    """)
+    @Option(name: [.short, .customLong("output")], help: ArgumentHelp("""
+        A file or directory to which the generated Swift sources will be written. \
+        (default: <root>)
+        """,
+        discussion: """
+        This is treated as a directory if it ends in a / or if this path exists and is a directory. \
+        In single-file mode, if this is a file, all generated content will be written to this file. \
+        If this is a directory, all generated content will be written to <output>/<enum-name>.generated.swift. \
+        In multiple-file mode, if this is a file, the Swift source corresponding to the directory information will be written to this file, and the files for each resource will be written to the directory of this file. \
+        If this is a directory, all files will be written to this directory, and the directory structure will be written to <output>/<enum-name>.generated.swift.
+        """)
+    )
     var outputString: String?
     
     @Argument(help: """

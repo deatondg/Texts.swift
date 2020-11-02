@@ -42,6 +42,7 @@
 		93841E1F253E4C6800729BED /* IdentifierPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentifierPath.swift; sourceTree = "<group>"; };
 		93841E2B253E546000729BED /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
 		93841E31253E5BBF00729BED /* Texts.swifttemplate */ = {isa = PBXFileReference; lastKnownFileType = text; path = Texts.swifttemplate; sourceTree = "<group>"; };
+		93968B092550B21B00F3CEE8 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +63,7 @@
 		93841DC4253CD0A300729BED = {
 			isa = PBXGroup;
 			children = (
+				93968B092550B21B00F3CEE8 /* README.md */,
 				93841DCF253CD0A300729BED /* Sources */,
 				93841DEC253CD88B00729BED /* Templates */,
 				93841DE5253CD7AC00729BED /* Generated */,
