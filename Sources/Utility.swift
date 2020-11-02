@@ -9,6 +9,17 @@ import ArgumentParser
 import PathKit
 import Stencil
 
+// A class representing a generated source file.
+class SourceFile {
+    let name: String
+    let contents: String
+    
+    init(name: String, contents: String) {
+        self.name = name
+        self.contents = contents
+    }
+}
+
 extension Path: ExpressibleByArgument {
     public init(argument: String) {
         self.init(argument)

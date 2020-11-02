@@ -40,9 +40,10 @@ struct Texts_swift: ParsableCommand {
     """)
     var enumName: String = "Texts"
     
-    @Option(name: .customLong("root"), help: """
+    @Option(name: .customLong("source-root"), help: """
     A directory which _all_ path arguments will be treated relative to. \
-    Specifying this directory helps with generating compact names. \
+    This can only be specified without an Xcode project. \
+    If a project is specified, the directory of the Xcode project will be used. \
     (default: The directory of the Xcode project if specified, and the current working directory otherwise)
     """)
     var rootPath: Path?
@@ -52,6 +53,21 @@ struct Texts_swift: ParsableCommand {
     This project is _not_ scanned for resource files.
     """)
     var xcodeProject: Path?
+    
+    @Option(name: .customLong("target"), help: """
+    The name of the Xcode target to link the generated files to. \
+    Must be specified if an Xcode project is specified. \
+    It is an error to supply this argument without an Xcode project.
+    """)
+    var targetName: String?
+    
+    @Option(name: .customLong("group"), help: """
+    The name of the Xcode group to link the generated files to. \
+    It is an error to supply this argument without an Xcode Project. \
+    This string is checked against both the name and paths of the Xcode groups. \
+    If unspecified, the root group is used.
+    """)
+    var groupName: String?
     
     @Option(name: [.short, .customLong("output")], help: """
     A file or directory to which the generated Swift sources will be written. \
@@ -79,44 +95,82 @@ struct Texts_swift: ParsableCommand {
         /* Validation */
         // We could put this in the validate method(), but we'd have to do some of the same work again anyway.
         
+        // Verify that the specified Xcode project exists and create the relevant data.
+        let xcode: (path: Path, project: XcodeProj, target: PBXTarget, group: PBXGroup)?
+        if let xcodeProject = xcodeProject {
+            // Make sure a target is specified along with the project
+            guard let targetName = targetName else {
+                throw ValidationError("<xcode-project> specified without a target.")
+            }
+            
+            let project: XcodeProj
+            do {
+                project = try XcodeProj(path: xcodeProject)
+            } catch {
+                throw ValidationError("Could not open the Xcode project: \(error).")
+            }
+            
+            // Confirm that this project has exactly one target with the specified name.
+            let targets = project.pbxproj.targets(named: targetName)
+            guard targets.count <= 1 else {
+                throw ValidationError("Target name \(targetName) is ambiguous. Do you have multiple targets with this name?")
+            }
+            guard let target = targets.first else {
+                throw ValidationError("Could not find target named \(targetName) in the specified Xcode project.")
+            }
+            
+            // If the group is specified, make sure it exists uniquely.
+            let group: PBXGroup
+            if let groupName = groupName {
+                let groups = project.pbxproj.groups.filter({ ($0.name == groupName) || ($0.path == groupName) })
+                guard groups.count <= 1 else {
+                    throw ValidationError("Group name \(groupName) is ambiguous. Do you have multiple groups with this name?")
+                }
+                guard let _group = groups.first else {
+                    throw ValidationError("Could not find group named \(groupName) in the specified Xcode Project.")
+                }
+                group = _group
+            } else {
+                guard let _group = try project.pbxproj.rootGroup() else {
+                    throw ValidationError("Xcode project has no root group. I'm not sure if this is even possible.")
+                }
+                group = _group
+            }
+            
+            xcode = (xcodeProject, project, target, group)
+        } else {
+            // Make sure that a target and group are not specified without an Xcode project
+            guard targetName == nil else {
+                throw ValidationError("<target> specified without an Xcode project.")
+            }
+            guard groupName == nil else {
+                throw ValidationError("<group> specified without an Xcode project.")
+            }
+            xcode = nil
+        }
+        
         // Our root path and Xcode project path are entangled.
         let root: Path
-        let xcodeProjectPath: Path?
-        if let rootPath = rootPath {
-            // If <root> is specified, then it is the root, and <xcode-project> is relative to it.
+        if let xcode = xcode {
+            // If an Xcode project is specified, <root> must not be specified.
+            guard rootPath == nil else {
+                throw ValidationError("<root> cannot be specified along with <xcode-project>.")
+            }
+            root = xcode.path.parent()
+        } else if let rootPath = rootPath {
+            // If no Xcode project is specified, we use the specified root path
             root = rootPath
-            xcodeProjectPath = xcodeProject
-        } else if let xcodeProject = xcodeProject {
-            // Otherwise, if <xcode-project> is specified, then its directory is root
-            root = xcodeProject.parent()
-            // In this case <xcode-project> is the only path relative to cwd rather than <root> (its parent)
-            xcodeProjectPath = Path(".") + xcodeProject.lastComponent
         } else {
-            // Otherwise, the root is cwd, and everything is relative to cwd
+            // If neither an Xcode project or a root are specified, use the current working directory
             root = Path.current
-            xcodeProjectPath = xcodeProject
         }
         // Whatever root we decide upon, it better be a directory
         guard root.isDirectory else {
             throw ValidationError("Specified root is not a directory: \(root)")
         }
         
-        // Now, we can chdir into root and correctly treat all paths as relative
+        // Now, we can chdir into root and correctly treat all paths except xcode.path as relative
         try root.chdir {
-            
-            // Create an XcodeProj from the xcodeProjectPath we decided upon
-            let xcodeProj: XcodeProj?
-            if let xcodeProjectPath = xcodeProjectPath {
-                do {
-                    xcodeProj = try XcodeProj(path: xcodeProjectPath)
-                } catch {
-                    throw ValidationError("Could not open the Xcode project: \(error)")
-                }
-            } else {
-                xcodeProj = nil
-            }
-            // xcodeProj == nil <=> xcodeProjectPath == nil <=> xcodeProject == nil
-            
             // Decide where we're going to output things.
             let outputDirectory: Path
             let outputName: String
@@ -188,6 +242,8 @@ struct Texts_swift: ParsableCommand {
             }
             directories.remove([rootIdentifier])
             
+            // Generate the source file(s) from our resources.
+            let sourceFiles: [SourceFile]
             if !multipleFiles {
                 let outputString = try Template(templateString: Texts.Templates.Texts_swifttemplate).render([
                     "version": Texts_swift.version,
@@ -196,11 +252,7 @@ struct Texts_swift: ParsableCommand {
                     "rootIdentifier": rootIdentifier
                 ])
                 
-                try (outputDirectory + outputName).write(outputString)
-                
-                if xcodeProj != nil {
-                    fatalError("Writing to Xcode projects not yet implemented.")
-                }
+                sourceFiles = [SourceFile(name: outputName, contents: outputString)]
             } else {
                 let directoryString = try Template(templateString: Texts.Templates.Texts_Directory_swifttemplate).render([
                     "version": Texts_swift.version,
@@ -208,28 +260,56 @@ struct Texts_swift: ParsableCommand {
                     "rootIdentifier": rootIdentifier
                 ])
                 
-                try (outputDirectory + outputName).write(directoryString)
-                
-                for file in files {
+                let directoryFile = SourceFile(name: outputName, contents: directoryString)
+                let otherFiles = try files.map({ file -> SourceFile in
                     let fileString = try Template(templateString: Texts.Templates.Texts_File_swifttemplate).render([
                         "version": Texts_swift.version,
                         "file": file
                     ])
                     
-                    try (outputDirectory + "\(file.identifierPath).generated.swift").write(fileString)
-                }
+                    return SourceFile(name: "\(file.identifierPath).generated.swift", contents: fileString)
+                })
                 
-                if xcodeProj != nil {
+                sourceFiles = [directoryFile] + otherFiles
+            }
+           
+            // Write our source files to disk
+            for file in sourceFiles {
+                try (outputDirectory + file.name).write(file.contents)
+            }
+        } // end root.chdir
+        
+        // If an Xcode project was specified, link our generated files to it.
+        if let (path, project, target, group) = xcode {
+            try project.pbxproj.rootProject()!.mainGroup.addGroup(named: "Test", options: GroupAddingOptions.withoutFolder)
+            //project.write(path: <#T##Path#>)
+            print(try project.pbxproj.rootProject()!.mainGroup!.path)
+            
+            //print(try project.pbxproj.groups.map({ try ($0.name, $0.fullPath(sourceRoot: ".")) }))
+            //print(try project.pbxproj.fileReferences.map({ try $0.path }))
+            
+            /*
+            for file in sourceFiles {
+                let outputFiles = group.children.filter({ $0.path == outputPath })
+                if outputFiles.count == 0 {
+                    
+                }
+                print(group.children.map({ $0.path }))
+                if let xcodeFile = group.file(named: outputName) {
+                    print("Here")
+                } else {
                     fatalError("Writing to Xcode projects not yet implemented.")
                 }
             }
+            */
         }
     }
 }
 
 
 //print(Texts_swift.helpMessage())
+Texts_swift.main(#"-r --xcode-project /Users/davisdeaton/Developer/Projects/Texts.swift/Texts.swift.xcodeproj --target Texts.swift --group Generated -o Generated Templates"#.split(separator: " ").map(String.init))
 //Texts_swift.main(#"-r -o /Users/davisdeaton/Developer/Projects/Texts.swift/Generated/"#.split(separator: " ").map(String.init))
 //Texts_swift.main(#"-r --root /Users/davisdeaton/Developer/Projects/Texts.swift --xcode-project /Users/davisdeaton/Developer/Projects/Texts.swift/Texts.swift.xcodeproj Templates -o /Users/davisdeaton/Developer/Projects/Texts.swift/Generated"#.split(separator: " ").map(String.init))
-Texts_swift.main(#"-r --root /Users/davisdeaton/Developer/Projects/Texts.swift Templates --multiple-files -o /Users/davisdeaton/Developer/Projects/Texts.swift/Generated"#.split(separator: " ").map(String.init))
+//Texts_swift.main(#"-r --root /Users/davisdeaton/Developer/Projects/Texts.swift Templates --multiple-files -o /Users/davisdeaton/Developer/Projects/Texts.swift/Generated"#.split(separator: " ").map(String.init))
 //Texts_swift.main("--root /Users/davisdeaton/Developer/Projects/Texts.swift/ Templates -o /Users/davisdeaton/Developer/Projects/Texts.swift/Generated".split(separator: " ").map(String.init))
