@@ -15,7 +15,7 @@ struct Texts_swift: ParsableCommand {
     static let version = "0.0.1"
     
     static let configuration = CommandConfiguration(commandName: "texts-swift",
-                                                    abstract: "A utility to generate Swift sources mirror the contents of text files as strings.",
+                                                    abstract: "A utility to generate Swift sources mirroring the contents of text files as strings.",
                                                     version: version)
     
     @Flag(name: .shortAndLong, help: """
@@ -32,7 +32,7 @@ struct Texts_swift: ParsableCommand {
         Create a .generated.swift file for each resource file.
         """,
         discussion: """
-        In this mode, <enum-name>.generated.swift will still be created to house the directory structure.
+        In this mode, <enum-name>.generated.swift will still be created to house the directory structure as an empty Swift enum.
         """)
     )
     var multipleFiles: Bool = false
@@ -68,11 +68,14 @@ struct Texts_swift: ParsableCommand {
     )
     var xcodeProject: Path?
     
-    @Option(name: .customLong("target"), help: """
-    The name of an Xcode target to link the generated files to. \
-    If it is not specified, the added source files will not be linked to any target. \
-    Multiple targets can be specified.
-    """)
+    @Option(name: .customLong("target"), help: ArgumentHelp("""
+        The name of an Xcode target to link the generated files to.
+        """,
+        discussion: """
+        Multiple targets can be specified. \
+        If no target is specified, the added source files will not be linked to any target.
+        """)
+    )
     var targetNames: [String] = []
     
     @Option(name: [.short, .customLong("output")], help: ArgumentHelp("""
@@ -109,7 +112,7 @@ struct Texts_swift: ParsableCommand {
         // We could put this in the validate method(), but we'd have to do some of the same work again anyway.
         
         // Verify that the specified Xcode project exists and create the relevant data.
-        let xcode: (path: Path, project: XcodeProj, targets: [(target: PBXTarget, sourcesBuildPhase: PBXSourcesBuildPhase)], mainGroup: PBXGroup)?
+        let xcode: (path: Path, project: XcodeProj, sourcesBuildPhases: [PBXSourcesBuildPhase], mainGroup: PBXGroup)?
         if let xcodeProject = xcodeProject {
             let project: XcodeProj
             do {
@@ -118,7 +121,7 @@ struct Texts_swift: ParsableCommand {
                 throw ValidationError("Could not open the Xcode project: \(error).")
             }
             
-            let sourcesBuildPhases = try targetNames.map({ targetName -> (target: PBXTarget, sourcesBuildPhase: PBXSourcesBuildPhase) in
+            let sourcesBuildPhases = try targetNames.map({ targetName -> PBXSourcesBuildPhase in
                 // Confirm that this project has exactly one target with the specified name.
                 let targets = project.pbxproj.targets(named: targetName)
                 guard targets.count <= 1 else {
@@ -131,12 +134,8 @@ struct Texts_swift: ParsableCommand {
                 guard let sourcesBuildPhase = try target.sourcesBuildPhase() else {
                     throw ValidationError("Could not find sources build phase for target: \(targetName)")
                 }
-                
-                if target.product == nil {
-                    print("Warning: Target \(targetName) has no product.")
-                }
-                
-                return (target, sourcesBuildPhase)
+                                
+                return sourcesBuildPhase
             })
             
             // Create the main group
@@ -158,7 +157,7 @@ struct Texts_swift: ParsableCommand {
         if let xcode = xcode {
             // If an Xcode project is specified, <root> must not be specified.
             guard rootPath == nil else {
-                throw ValidationError("<root> cannot be specified along with <xcode-project>.")
+                throw ValidationError("<root> cannot be specified along with an Xcode project.")
             }
             root = xcode.path.parent()
         } else if let rootPath = rootPath {
@@ -170,7 +169,7 @@ struct Texts_swift: ParsableCommand {
         }
         // Whatever root we decide upon, it better be a directory
         guard root.isDirectory else {
-            throw ValidationError("Specified root is not a directory: \(root)")
+            throw ValidationError("Specified or derived <root> is not a directory: \(root)")
         }
         
         // Now, we can chdir into root and correctly treat all paths except xcode.path as relative
@@ -191,14 +190,15 @@ struct Texts_swift: ParsableCommand {
                 outputName = outputPath.lastComponent
             }
         } else {
-            outputDirectory = root
+            // If no output is specified, just write to root.
+            outputDirectory = Path(".")
             outputName = "\(rootIdentifier).generated.swift"
         }
         // Try to create this directory in case it does not exist.
         try outputDirectory.mkpath()
         // Confirm we have succeeded. I'm not sure if this is necessary.
         guard outputDirectory.isDirectory else {
-            throw ValidationError("Specified output directory is not a directory: \(outputDirectory)")
+            throw ValidationError("Specified or derived output directory is not a directory: \(outputDirectory)")
         }
         
         // Make sure that all the resources we'll be reading from actually exist
@@ -233,7 +233,7 @@ struct Texts_swift: ParsableCommand {
         guard Set(files.map(\.identifierPath)).count == files.count else {
             for file1 in files {
                 for file2 in files {
-                    guard file1.identifierPath != file2.identifierPath else {
+                    guard file1.path == file2.path || file1.identifierPath != file2.identifierPath else {
                         throw ValidationError("Two file paths were mapped to the same Swift identifier: \(file1.path) and \(file2.path) both map to \(file1.identifierPath)")
                     }
                 }
@@ -251,6 +251,10 @@ struct Texts_swift: ParsableCommand {
                 directories.update(with: identifierPath)
             }
         }
+        // In the generated Swift source, each directory is represented as an enum in the scope of the enum of its parent.
+        // The path [rootIdentifier] has no parent, so it must be created in the global scope.
+        // Therefore, we have to generate its code in a distinct way.
+        // Thus, we separate this path out from the others.
         directories.remove([rootIdentifier])
         
         // Generate the source file(s) from our resources.
@@ -270,8 +274,8 @@ struct Texts_swift: ParsableCommand {
                 "directories": directories.sorted(by: { $0.description < $1.description }),
                 "rootIdentifier": rootIdentifier
             ])
-            
             let directoryFile = SourceFile(name: outputName, contents: directoryString)
+            
             let otherFiles = try files.map({ file -> SourceFile in
                 let fileString = try Template(templateString: Texts.Templates.Texts_File_swifttemplate).render([
                     "version": Texts_swift.version,
@@ -293,7 +297,7 @@ struct Texts_swift: ParsableCommand {
         Path.current = originalWorkingDirectory
         
         // If an Xcode project was specified, link our generated files to it.
-        if let (path, project, targets, mainGroup) = xcode {
+        if let (path, project, sourcesBuildPhases, mainGroup) = xcode {
             var shouldWrite = false
             
             // Find the group to add our source files to.
@@ -333,7 +337,7 @@ struct Texts_swift: ParsableCommand {
                     let buildFile = PBXBuildFile(file: fileReference, product: nil, settings: nil)
                     project.pbxproj.add(object: buildFile)
                     // Add the build file to each target
-                    for (_, sourcesBuildPhase) in targets {
+                    for sourcesBuildPhase in sourcesBuildPhases {
                         // If the build phase has no file list, create one
                         if sourcesBuildPhase.files == nil {
                             sourcesBuildPhase.files = []
@@ -352,4 +356,5 @@ struct Texts_swift: ParsableCommand {
     }
 }
 
+print(Texts_swift.helpMessage(columns: 1000))
 Texts_swift.main()
