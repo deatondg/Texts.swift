@@ -356,5 +356,4 @@ struct Texts_swift: ParsableCommand {
     }
 }
 
-print(Texts_swift.helpMessage(columns: 1000))
 Texts_swift.main()
