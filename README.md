@@ -3,7 +3,7 @@
 ## Overview
 
 Texts.swift generates Swift source code mirroring the contents of text files as strings.
-Users run the utility `texts-swift` either manually or in a custom build phase, supplying it with resources, perhaps
+Users run the utility `texts-swift` either manually or in a custom build phase, supplying it with resources
 ```
 Templates/Texts_Directory.swifttemplate
 Templates/Texts_File.swifttemplate
@@ -37,6 +37,7 @@ extension Texts.Templates {
 ```
 so that the contents of `Templates/Texts.swifttemplate` can be used within Swift as `Texts.Templates.Texts_swifttemplate`.
 This is in fact the structure of the [Stencil](https://github.com/kylef/Stencil) template resources used Texts.swift.
+
 That's right: Texts.swift is used to generate its own source code.
 
 ## Why?
