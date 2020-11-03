@@ -100,6 +100,23 @@ If you would still like this kind of behavior, I suggest chaining `texts-swift` 
 find <root> <criterion> | xargs texts-swift --source-root <root> <options>
 ```
 
+### Example
+
+Texts.swift generates some of its own source by
+ ```
+texts-swift --source-root . -o Sources/Generated/ Templates 
+```
+
+## Installation
+
+### Homebrew
+
+You can install Texts.swift from my [Homebrew](https://brew.sh) tap by running `brew tap deatondg/texts-swift` and then `brew install texts-swift`.
+
+### Manual Installation
+
+To install manually, clone or download this repository, run `swift build -c release`, and place the resulting executable `.build/release/texts-swift` wherever you'd like.
+
 ## Detailed Design
 
 I wrote this tool for three primary reasons:
