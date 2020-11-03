@@ -191,5 +191,5 @@ and inspired by
 
 My name is Davis Deaton. 
 This is my first open source project.
-I do not have much of an internet presence, but you can visit [my website](https://www.davislikes.coffee)
+I do not have much of an internet presence, but you can visit [my website](https://www.davislikes.coffee).
 If you like my work and want to get ahold of me, your best bet is to [email me](mailto://deaton.dg@gmail.com) although I rarely check my inbox.
