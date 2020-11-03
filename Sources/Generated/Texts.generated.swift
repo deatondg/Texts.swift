@@ -8,7 +8,7 @@ extension Texts { enum Templates {} }
 
 
 extension Texts.Templates {
-    static var Texts_Directory_swifttemplate: String = """
+    static let Texts_Directory_swifttemplate: String = """
 // Generated using Texts.swift {{ version }} by Davis Deaton
 // DO NOT EDIT
 enum {{ rootIdentifier }} {}
@@ -21,12 +21,12 @@ extension {{ directory.parent }} { enum {{ directory.lastComponent }} {} }
 }
 
 extension Texts.Templates {
-    static var Texts_File_swifttemplate: String = #"""
+    static let Texts_File_swifttemplate: String = #"""
 // Generated using Texts.swift {{ version }} by Davis Deaton
 // DO NOT EDIT
 
 extension {{ file.parent }} {
-    static var {{ file.name }}: String = {{ file.escapes }}"""
+    static let {{ file.name }}: String = {{ file.escapes }}"""
 {{ file.contents }}
 """{{ file.escapes }}
 }
@@ -35,7 +35,7 @@ extension {{ file.parent }} {
 }
 
 extension Texts.Templates {
-    static var Texts_swifttemplate: String = #"""
+    static let Texts_swifttemplate: String = #"""
 // Generated using Texts.swift {{ version }} by Davis Deaton
 // DO NOT EDIT
 enum {{ rootIdentifier }} {}
@@ -46,7 +46,7 @@ extension {{ directory.parent }} { enum {{ directory.lastComponent }} {} }
 
 {% for file in files %}
 extension {{ file.parent }} {
-    static var {{ file.name }}: String = {{ file.escapes }}"""
+    static let {{ file.name }}: String = {{ file.escapes }}"""
 {{ file.contents }}
 """{{ file.escapes }}
 }

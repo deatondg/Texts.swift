@@ -8,7 +8,7 @@ extension {{ directory.parent }} { enum {{ directory.lastComponent }} {} }
 
 {% for file in files %}
 extension {{ file.parent }} {
-    static var {{ file.name }}: String = {{ file.escapes }}"""
+    static let {{ file.name }}: String = {{ file.escapes }}"""
 {{ file.contents }}
 """{{ file.escapes }}
 }
