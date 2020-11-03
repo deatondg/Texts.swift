@@ -12,7 +12,7 @@ import Stencil
 import XcodeProj
 
 struct Texts_swift: ParsableCommand {
-    static let version = "0.0.1"
+    static let version = "1.0.0"
     
     static let configuration = CommandConfiguration(commandName: "texts-swift",
                                                     abstract: "A utility to generate Swift source code mirroring the contents of text files as strings.",

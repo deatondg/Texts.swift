@@ -11,7 +11,7 @@ Templates/Texts.swifttemplate
 ```
 to convert into a Swift source file looking something like
 ```swift
-// Generated using Texts.swift 0.0.1 by Davis Deaton
+// Generated using Texts.swift 1.0.0 by Davis Deaton
 // DO NOT EDIT
 enum Texts {}
 
