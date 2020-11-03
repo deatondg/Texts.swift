@@ -4,6 +4,9 @@ import PackageDescription
 
 let package = Package(
     name: "Texts.swift",
+    products: [
+        .executable(name: "texts-swift", targets: ["Texts.swift"])
+    ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser", .upToNextMajor(from: "0.3.1")),
         .package(url: "https://github.com/kylef/PathKit", .upToNextMajor(from: "1.0.0")),
@@ -19,10 +22,7 @@ let package = Package(
                 "Stencil",
                 "XcodeProj",
             ],
-            path: ".",
-            sources: [
-                "Sources",
-                "Generated",
-            ]),
+            path: "Sources"
+        )
     ]
 )
