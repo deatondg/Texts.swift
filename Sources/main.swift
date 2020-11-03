@@ -15,7 +15,7 @@ struct Texts_swift: ParsableCommand {
     static let version = "0.0.1"
     
     static let configuration = CommandConfiguration(commandName: "texts-swift",
-                                                    abstract: "A utility to generate Swift sources mirroring the contents of text files as strings.",
+                                                    abstract: "A utility to generate Swift source code mirroring the contents of text files as strings.",
                                                     version: version)
     
     @Flag(name: .shortAndLong, help: """
