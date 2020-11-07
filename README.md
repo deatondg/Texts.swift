@@ -36,7 +36,7 @@ extension Texts.Templates {
 }
 ```
 so that the contents of `Templates/Texts.swifttemplate` can be used within Swift as `Texts.Templates.Texts_swifttemplate`.
-This is in fact the structure of the [Stencil](https://github.com/kylef/Stencil) template resources used Texts.swift.
+This is in fact the structure of the [Stencil](https://github.com/kylef/Stencil) template resources used by Texts.swift.
 
 That's right: Texts.swift is used to generate its own source code.
 
