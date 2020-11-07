@@ -44,7 +44,7 @@ That's right: Texts.swift is used to generate its own source code.
 
 Mac and iOS apps are almost always distributed as folders.
 Thus, they can use `Bundle.main` to access their resources with high confidence that these resources have been correctly installed with them.
-Tools like [R.swift](https://github.com/mac-cain13/R.swift) even autogenerate type-safe wrappers for these resources, avoiding errors from typos and the link.
+Tools like [R.swift](https://github.com/mac-cain13/R.swift) even autogenerate type-safe wrappers for these resources, avoiding errors from typos and the like.
 However, command line tools do not have the same luxury.
 It is simply much more convenient if such tools can ship as single executables.
 
